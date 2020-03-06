@@ -62,7 +62,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private File mCascadeFile;
     private File mCascadeFileMouth;
     private CascadeClassifier mJavaDetector;
-    private CascadeClassifier mJavaDetectorEye;
+    private CascadeClassifier mJavaDetectorMouth;
 
     private int mDetectorType = JAVA_DETECTOR;
     private String[] mDetectorName;
@@ -86,7 +86,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 case LoaderCallbackInterface.SUCCESS:
                 {
                     Log.i(TAG, "OpenCV loaded successfully");
-
 
                     try {
                         // load cascade file from application resources
@@ -120,15 +119,17 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                         if (mJavaDetector.empty()) {
                             Log.e(TAG, "Failed to load cascade classifier");
                             mJavaDetector = null;
-                        } else
+                        } else {
                             Log.i(TAG, "Loaded cascade classifier from " + mCascadeFile.getAbsolutePath());
+                        }
 
-                        mJavaDetectorEye = new CascadeClassifier(mCascadeFileMouth.getAbsolutePath());
-                        if (mJavaDetectorEye.empty()) {
-                            Log.e(TAG, "Failed to load cascade classifier for eye");
-                            mJavaDetectorEye = null;
-                        } else
+                        mJavaDetectorMouth = new CascadeClassifier(mCascadeFileMouth.getAbsolutePath());
+                        if (mJavaDetectorMouth.empty()) {
+                            Log.e(TAG, "Failed to load cascade classifier for mouth");
+                            mJavaDetectorMouth = null;
+                        } else {
                             Log.i(TAG, "Loaded cascade classifier from " + mCascadeFileMouth.getAbsolutePath());
+                        }
 
                         cascadeDir.delete();
                         cascadeDirMouth.delete();
@@ -137,6 +138,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                         e.printStackTrace();
                         Log.e(TAG, "Failed to load cascade. Exception thrown: " + e);
                     }
+
                     mOpenCvCameraView.enableFpsMeter();
                     mOpenCvCameraView.setCameraIndex(1);
                     mOpenCvCameraView.enableView();
@@ -269,7 +271,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             if (mJavaDetector != null) {
                 mJavaDetector.detectMultiScale(mGray, faces, 1.1, 2, 2,
                         new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
-                mJavaDetector.detectMultiScale(mGray, mouths, 1.1, 2, 2,
+                mJavaDetectorMouth.detectMultiScale(mGray, mouths, 1.1, 2, 2,
                         new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
             }
         }
@@ -282,12 +284,12 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         for (int i = 0; i < mouthsArray.length; i++)
         {
             Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
-            xCenter = (facesArray[i].x + facesArray[i].width + facesArray[i].x) / 2;
-            yCenter = (facesArray[i].y + facesArray[i].y + facesArray[i].height) / 2;
+            xCenter = (mouthsArray[i].x + mouthsArray[i].width + mouthsArray[i].x) / 2;
+            yCenter = (mouthsArray[i].y + mouthsArray[i].y + mouthsArray[i].height) / 2;
             Point center = new Point(xCenter, yCenter);
 
-            smileWidth = facesArray[i].width;
-            smileHeight = facesArray[i].height;
+            smileWidth = mouthsArray[i].width;
+            smileHeight = mouthsArray[i].height;
         }
 
         return mRgba;
