@@ -2,13 +2,19 @@ package com.example.digitalsmile;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.ImageDecoder;
+import android.graphics.drawable.BitmapDrawable;
+import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
@@ -16,7 +22,9 @@ import org.opencv.android.BaseLoaderCallback;
 import org.opencv.android.CameraBridgeViewBase;
 import org.opencv.android.LoaderCallbackInterface;
 import org.opencv.android.OpenCVLoader;
+import org.opencv.android.Utils;
 import org.opencv.core.Core;
+import org.opencv.core.CvType;
 import org.opencv.core.Mat;
 import org.opencv.core.MatOfRect;
 import org.opencv.core.Point;
@@ -78,7 +86,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     double yCenter = -1;
     double smileWidth = -1;
     double smileHeight = -1;
-
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -151,10 +158,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         }
     };
 
+    private ImageView teeth;
+
     public MainActivity() {
         mDetectorName = new String[2];
         mDetectorName[JAVA_DETECTOR] = "Java";
-
         Log.i(TAG, "Instantiated new " + this.getClass());
     }
 
@@ -164,6 +172,8 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        teeth = findViewById(R.id.teeth);
+        teeth.setVisibility(View.VISIBLE);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
@@ -281,6 +291,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         Rect[] facesArray = faces.toArray(), mouthsArray = mouths.toArray();
 
+
         for (int i = 0; i < mouthsArray.length; i++)
         {
             Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
@@ -290,6 +301,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
             smileWidth = mouthsArray[i].width;
             smileHeight = mouthsArray[i].height;
+           // Mat tmp = new Mat (smileWidth, smileHeight, CvType.CV_8UC1);
+           // Utils.bitmapToMat(tmp, tmp);
+            Bitmap dst = Bitmap.createBitmap((int)smileWidth,(int)smileHeight, Bitmap.Config.ARGB_8888);
+            Bitmap src =   ((BitmapDrawable)teeth.getDrawable()).getBitmap();
+           // Imgproc.resize(src,dst,new Size(smileWidth,smileHeight));
         }
 
         return mRgba;

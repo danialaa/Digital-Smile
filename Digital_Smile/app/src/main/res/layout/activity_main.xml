@@ -10,6 +10,14 @@
         android:layout_height="fill_parent"
         android:id="@+id/fd_activity_surface_view" />
 
+
+    <ImageView
+        android:id="@+id/teeth"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:src="@drawable/teeth"
+        android:visibility="invisible"
+        />
     <Button
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
