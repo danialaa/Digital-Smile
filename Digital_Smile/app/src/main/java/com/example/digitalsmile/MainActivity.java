@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Color;
+import android.graphics.ColorSpace;
 import android.graphics.ImageDecoder;
 import android.graphics.drawable.BitmapDrawable;
 import android.media.Image;
@@ -66,6 +67,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private MenuItem mItemFace20;
 
     private Mat mRgba;
+
+    private Mat mRgbaT;
+
+    private Mat mRgbaF;
     private Mat mGray;
     private File mCascadeFile;
     private File mCascadeFileMouth;
@@ -173,7 +178,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         setContentView(R.layout.activity_main);
 
         teeth = findViewById(R.id.teeth);
-        teeth.setVisibility(View.VISIBLE);
+
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
@@ -250,7 +255,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
-        mRgba = new Mat();
+        mRgba = new Mat(height,width,CvType.CV_8UC4);
+        mRgbaF = new Mat(height,width,CvType.CV_8UC4);
+        mRgbaT = new Mat(width,height,CvType.CV_8UC4);
+
     }
 
     public void onCameraViewStopped() {
@@ -262,8 +270,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
-        mGray = inputFrame.gray();
-
+         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
+Core.transpose(mRgba,mRgbaT);
+Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
+Core.flip(mRgbaF,mRgba,0);
         if (mAbsoluteFaceSize == 0) {
             int height = mGray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
@@ -291,7 +301,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         Rect[] facesArray = faces.toArray(), mouthsArray = mouths.toArray();
 
-
         for (int i = 0; i < mouthsArray.length; i++)
         {
             Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
@@ -301,12 +310,43 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
             smileWidth = mouthsArray[i].width;
             smileHeight = mouthsArray[i].height;
-           // Mat tmp = new Mat (smileWidth, smileHeight, CvType.CV_8UC1);
-           // Utils.bitmapToMat(tmp, tmp);
-            Bitmap dst = Bitmap.createBitmap((int)smileWidth,(int)smileHeight, Bitmap.Config.ARGB_8888);
-            Bitmap src =   ((BitmapDrawable)teeth.getDrawable()).getBitmap();
-           // Imgproc.resize(src,dst,new Size(smileWidth,smileHeight));
-        }
+            mRgba.convertTo(mRgba,  CvType.CV_8UC1);
+            Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
+            int width = (int)(mouthsArray[i].br().x - mouthsArray[i].tl().x);
+
+
+            int height =(int)( mouthsArray[i].br().y - mouthsArray[i].tl().y);
+
+            Mat dstmat = new Mat(width, height, CvType.CV_8UC1);
+            Mat srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC1);
+
+            Utils.bitmapToMat(src, srcmat);
+            mRgba.convertTo(mRgba,  CvType.CV_8UC1);
+
+            //     dstmat = srcmat;
+
+            Imgproc.resize(srcmat, dstmat, new Size( height, height),0,0,0);
+
+            Imgproc.putText(mRgba, "[" + mouthsArray[i].x+ "," + (mouthsArray[i].x + dstmat.width()) + ","+ mRgba.width()+ "]",
+                    new Point(center.x + 20, center.y + 20),
+                    Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
+                            255));
+            Imgproc.putText(mRgba, "[" + mouthsArray[i].y+ "," + (mouthsArray[i].y + dstmat.height()) + ","+ mRgba.height()+ "]",
+                    new Point(center.x + 60, center.y + 60),
+                    Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
+                            255));
+
+            int r2 = mouthsArray[i].x;
+            int c2 = mouthsArray[i].y;
+    //mRgba = dstmat;
+            if(0 <= mouthsArray[i].x  && mouthsArray[i].x <  mouthsArray[i].x  + dstmat.width() && dstmat.width() +mouthsArray[i].x < mRgba.width())
+            {
+                if(0 <= mouthsArray[i].y  && mouthsArray[i].y <  mouthsArray[i].y  + dstmat.width() && dstmat.height() +mouthsArray[i].y < mRgba.height()) {
+
+                    dstmat.copyTo(mRgba.rowRange(mouthsArray[i].x ,mouthsArray[i].x  + dstmat.height()).colRange(mouthsArray[i].y,mouthsArray[i].y + dstmat.height()));
+                }
+            }
+            }
 
         return mRgba;
     }
