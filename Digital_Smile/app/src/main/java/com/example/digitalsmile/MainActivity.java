@@ -4,6 +4,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Camera;
 import android.graphics.Color;
 import android.graphics.ColorSpace;
 import android.graphics.ImageDecoder;
@@ -28,6 +29,7 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.reflect.Method;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
@@ -187,22 +189,22 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
                 method = progress;
                 switch (method) {
                     case 0:
-                        mValue.setText("TM_SQDIFF");
+                        mValue.setText("0");
                         break;
                     case 1:
-                        mValue.setText("TM_SQDIFF_NORMED");
+                        mValue.setText("25");
                         break;
                     case 2:
-                        mValue.setText("TM_CCOEFF");
+                        mValue.setText("50");
                         break;
                     case 3:
-                        mValue.setText("TM_CCOEFF_NORMED");
+                        mValue.setText("75");
                         break;
                     case 4:
-                        mValue.setText("TM_CCORR");
+                        mValue.setText("75");
                         break;
                     case 5:
-                        mValue.setText("TM_CCORR_NORMED");
+                        mValue.setText("100");
                         break;
                 }
             }
@@ -250,37 +252,52 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mZoomWindow2.release();
     }
 
+
+    public Mat AugmentTeeth(int width , int height , int startx , int starty, Mat mRgba)
+    {
+        Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
+        Mat srcmat = new Mat(src.getWidth(), src.getHeight(), CvType.CV_8UC4);
+        Utils.bitmapToMat(src, srcmat);
+
+        mRgba.convertTo(mRgba, CvType.CV_8UC4);
+
+        Bitmap teethbit = Bitmap.createScaledBitmap(src,width,height,true);
+        src = teethbit;
+
+        Bitmap ss = Bitmap.createBitmap(mRgba.width(),mRgba.height(), Bitmap.Config.ARGB_8888);
+        Utils.matToBitmap(mRgba,ss);
+
+        for(int r = 0, r2 = startx; r < src.getWidth() && r2 < ss.getWidth(); r++, r2++ )
+        {
+            for( int c = 0, c2 = starty; c < src.getHeight() && c2 < ss.getHeight(); c2++, c++)
+            {
+                int pixval = src.getPixel(r, c);
+
+                if( pixval != 0) {
+                    ss.setPixel(r2, c2, src.getPixel(r, c));
+                }
+            }
+        }
+
+        Utils.bitmapToMat(ss,mRgba);
+
+        return mRgba;
+    }
+
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
-        Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
+
         Core.transpose(mRgba,mRgbaT);
+        mRgba = AugmentTeeth(350,350,100,100,mRgba);
         Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
         Core.flip(mRgbaF,mRgba,0);
-        Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
-        int width = 50;
-        int height = 150;
-        Mat dstmat = new Mat(width, height, CvType.CV_8UC4);
-        Mat srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC4);
-teeth.setVisibility(View.VISIBLE);
-        Utils.bitmapToMat(src, srcmat);
-        mRgba.convertTo(mRgba,  CvType.CV_8UC4);
+        Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
 
-        //dstmat = srcmat;g
-
-        Imgproc.resize(srcmat, dstmat, new Size( 330, 310),0,0,0);
-        Imgproc.resize(dstmat, dstmat, new Size( 330, 310),0,0,0);
-        Imgproc.putText(mRgba, "[" + dstmat.width()+ "," + dstmat.height() + ","+ mRgba.width()+ "]",
-                new Point(30+ 20, 30 + 20),
-                Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
-                        255));
-Bitmap ss = Bitmap.createBitmap(width,height, Bitmap.Config.ARGB_8888);
-  //   Utils.matToBitmap(dstmat,ss);
-        Log.d("size", dstmat.width() + " and "+ dstmat.height());
-      //  dstmat.copyTo(mRgba.rowRange(100, 100 +dstmat.width()).colRange(100,100 + dstmat.height()));
-    //       teeth.setImageBitmap(ss);
+        int height;
 
         if (mAbsoluteFaceSize == 0) {
             height = mGray.rows();
+
             if (Math.round(height * mRelativeFaceSize) > 0) {
                 mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
             }
@@ -299,59 +316,17 @@ Bitmap ss = Bitmap.createBitmap(width,height, Bitmap.Config.ARGB_8888);
                 mJavaDetectorMouth.detectMultiScale(mGray, mouths, 1.1, 2, 2,
                         new Size(mAbsoluteFaceSize, mAbsoluteFaceSize), new Size());
             }
-        }
-        else {
+        } else {
             Log.e(TAG, "Detection method is not selected!");
         }
 
-        Rect[] facesArray = faces.toArray(), mouthsArray = mouths.toArray();
+        Rect[] mouthsArray = mouths.toArray();
 
         for (int i = 0; i < mouthsArray.length; i++)
         {
             Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
-            xCenter = (mouthsArray[i].x + mouthsArray[i].width + mouthsArray[i].x) / 2;
-            yCenter = (mouthsArray[i].y + mouthsArray[i].y + mouthsArray[i].height) / 2;
-            Point center = new Point(xCenter, yCenter);
 
-            smileWidth = mouthsArray[i].width;
-            smileHeight = mouthsArray[i].height;
-            mRgba.convertTo(mRgba,  CvType.CV_8UC4);
-            src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
-            width = (int)(mouthsArray[i].br().x - mouthsArray[i].tl().x);
-
-
-            height =(int)( mouthsArray[i].br().y - mouthsArray[i].tl().y);
-
-            dstmat = new Mat(width, height, CvType.CV_8UC4);
-            srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC4);
-
-            Utils.bitmapToMat(src, srcmat);
-            mRgba.convertTo(mRgba,  CvType.CV_8UC4);
-
-            //dstmat = srcmat;
-
-            Imgproc.resize(srcmat, dstmat, new Size( height, height),0,0,0);
-            Imgproc.resize(dstmat, dstmat, new Size( height, height),0,0,0);
-
-            Imgproc.putText(mRgba, "[" + mouthsArray[i].x+ "," + (mouthsArray[i].x + dstmat.width()) + ","+ mRgba.width()+ "]",
-                    new Point(center.x + 20, center.y + 20),
-                    Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
-                            255));
-            Imgproc.putText(mRgba, "[" + mouthsArray[i].y+ "," + (mouthsArray[i].y + dstmat.height()) + ","+ mRgba.height()+ "]",
-                    new Point(center.x + 60, center.y + 60),
-                    Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
-                            255));
-
-            int r2 = mouthsArray[i].x;
-            int c2 = mouthsArray[i].y;
-            //mRgba = dstmat;
-            if(0 <= mouthsArray[i].x  && mouthsArray[i].x < mouthsArray[i].x + dstmat.width() && dstmat.width() + mouthsArray[i].x < mRgba.width())
-            {
-                if(0 <= mouthsArray[i].y  && mouthsArray[i].y < mouthsArray[i].y + dstmat.width() && dstmat.height() + mouthsArray[i].y < mRgba.height()) {
-
-                    dstmat.copyTo(mRgba.rowRange(mouthsArray[i].x, mouthsArray[i].x + dstmat.height()).colRange(mouthsArray[i].y, mouthsArray[i].y + dstmat.height()));
-                }
-            }
+            mRgba = AugmentTeeth(mouthsArray[i].width,mouthsArray[i].height,mouthsArray[i].x,mouthsArray[i].y,mRgba);
         }
 
         return mRgba;
@@ -402,16 +377,6 @@ Bitmap ss = Bitmap.createBitmap(width,height, Bitmap.Config.ARGB_8888);
             mZoomWindow2 = mRgba.submat(0, rows / 2 - rows / 10, cols / 2
                     + cols / 10, cols);
         }
-    }
-
-    public Point getSmileLocation() {
-        Point point = new Point(xCenter, yCenter);
-        return point;
-    }
-
-    public Point getSmileSize() {
-        Point point = new Point(smileWidth, smileHeight);
-        return point;
     }
 
     public void onRecreateClick(View view) {
