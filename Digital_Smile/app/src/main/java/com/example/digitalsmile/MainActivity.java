@@ -19,19 +19,8 @@ import android.widget.ImageView;
 import android.widget.SeekBar;
 import android.widget.TextView;
 
-import org.opencv.android.BaseLoaderCallback;
-import org.opencv.android.CameraBridgeViewBase;
-import org.opencv.android.LoaderCallbackInterface;
-import org.opencv.android.OpenCVLoader;
-import org.opencv.android.Utils;
-import org.opencv.core.Core;
-import org.opencv.core.CvType;
-import org.opencv.core.Mat;
-import org.opencv.core.MatOfRect;
-import org.opencv.core.Point;
-import org.opencv.core.Rect;
-import org.opencv.core.Scalar;
-import org.opencv.core.Size;
+import org.opencv.android.*;
+import org.opencv.core.*;
 import org.opencv.imgproc.Imgproc;
 import org.opencv.objdetect.CascadeClassifier;
 
@@ -42,15 +31,8 @@ import java.io.InputStream;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
-    private static final Scalar FACE_RECT_COLOR = new Scalar(0, 255, 0, 255);
     private static final Scalar MOUTH_RECT_COLOR = new Scalar(255, 0, 0, 255);
     public  static final int JAVA_DETECTOR = 0;
-    private static final int TM_SQDIFF = 0;
-    private static final int TM_SQDIFF_NORMED = 1;
-    private static final int TM_CCOEFF = 2;
-    private static final int TM_CCOEFF_NORMED = 3;
-    private static final int TM_CCORR = 4;
-    private static final int TM_CCORR_NORMED = 5;
 
     private int learn_frames = 0;
     private Mat teplateR;
@@ -270,12 +252,35 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
-         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
-Core.transpose(mRgba,mRgbaT);
-Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
-Core.flip(mRgbaF,mRgba,0);
+        Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
+        Core.transpose(mRgba,mRgbaT);
+        Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
+        Core.flip(mRgbaF,mRgba,0);
+        Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
+        int width = 50;
+        int height = 150;
+        Mat dstmat = new Mat(width, height, CvType.CV_8UC4);
+        Mat srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC4);
+teeth.setVisibility(View.VISIBLE);
+        Utils.bitmapToMat(src, srcmat);
+        mRgba.convertTo(mRgba,  CvType.CV_8UC4);
+
+        //dstmat = srcmat;g
+
+        Imgproc.resize(srcmat, dstmat, new Size( 330, 310),0,0,0);
+        Imgproc.resize(dstmat, dstmat, new Size( 330, 310),0,0,0);
+        Imgproc.putText(mRgba, "[" + dstmat.width()+ "," + dstmat.height() + ","+ mRgba.width()+ "]",
+                new Point(30+ 20, 30 + 20),
+                Core.FONT_HERSHEY_SIMPLEX, 0.7, new Scalar(255, 255, 255,
+                        255));
+Bitmap ss = Bitmap.createBitmap(width,height, Bitmap.Config.ARGB_8888);
+  //   Utils.matToBitmap(dstmat,ss);
+        Log.d("size", dstmat.width() + " and "+ dstmat.height());
+      //  dstmat.copyTo(mRgba.rowRange(100, 100 +dstmat.width()).colRange(100,100 + dstmat.height()));
+    //       teeth.setImageBitmap(ss);
+
         if (mAbsoluteFaceSize == 0) {
-            int height = mGray.rows();
+            height = mGray.rows();
             if (Math.round(height * mRelativeFaceSize) > 0) {
                 mAbsoluteFaceSize = Math.round(height * mRelativeFaceSize);
             }
@@ -310,22 +315,23 @@ Core.flip(mRgbaF,mRgba,0);
 
             smileWidth = mouthsArray[i].width;
             smileHeight = mouthsArray[i].height;
-            mRgba.convertTo(mRgba,  CvType.CV_8UC1);
-            Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
-            int width = (int)(mouthsArray[i].br().x - mouthsArray[i].tl().x);
+            mRgba.convertTo(mRgba,  CvType.CV_8UC4);
+            src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
+            width = (int)(mouthsArray[i].br().x - mouthsArray[i].tl().x);
 
 
-            int height =(int)( mouthsArray[i].br().y - mouthsArray[i].tl().y);
+            height =(int)( mouthsArray[i].br().y - mouthsArray[i].tl().y);
 
-            Mat dstmat = new Mat(width, height, CvType.CV_8UC1);
-            Mat srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC1);
+            dstmat = new Mat(width, height, CvType.CV_8UC4);
+            srcmat = new Mat(src.getWidth(), src.getHeight(),  CvType.CV_8UC4);
 
             Utils.bitmapToMat(src, srcmat);
-            mRgba.convertTo(mRgba,  CvType.CV_8UC1);
+            mRgba.convertTo(mRgba,  CvType.CV_8UC4);
 
-            //     dstmat = srcmat;
+            //dstmat = srcmat;
 
             Imgproc.resize(srcmat, dstmat, new Size( height, height),0,0,0);
+            Imgproc.resize(dstmat, dstmat, new Size( height, height),0,0,0);
 
             Imgproc.putText(mRgba, "[" + mouthsArray[i].x+ "," + (mouthsArray[i].x + dstmat.width()) + ","+ mRgba.width()+ "]",
                     new Point(center.x + 20, center.y + 20),
@@ -338,15 +344,15 @@ Core.flip(mRgbaF,mRgba,0);
 
             int r2 = mouthsArray[i].x;
             int c2 = mouthsArray[i].y;
-    //mRgba = dstmat;
-            if(0 <= mouthsArray[i].x  && mouthsArray[i].x <  mouthsArray[i].x  + dstmat.width() && dstmat.width() +mouthsArray[i].x < mRgba.width())
+            //mRgba = dstmat;
+            if(0 <= mouthsArray[i].x  && mouthsArray[i].x < mouthsArray[i].x + dstmat.width() && dstmat.width() + mouthsArray[i].x < mRgba.width())
             {
-                if(0 <= mouthsArray[i].y  && mouthsArray[i].y <  mouthsArray[i].y  + dstmat.width() && dstmat.height() +mouthsArray[i].y < mRgba.height()) {
+                if(0 <= mouthsArray[i].y  && mouthsArray[i].y < mouthsArray[i].y + dstmat.width() && dstmat.height() + mouthsArray[i].y < mRgba.height()) {
 
-                    dstmat.copyTo(mRgba.rowRange(mouthsArray[i].x ,mouthsArray[i].x  + dstmat.height()).colRange(mouthsArray[i].y,mouthsArray[i].y + dstmat.height()));
+                    dstmat.copyTo(mRgba.rowRange(mouthsArray[i].x, mouthsArray[i].x + dstmat.height()).colRange(mouthsArray[i].y, mouthsArray[i].y + dstmat.height()));
                 }
             }
-            }
+        }
 
         return mRgba;
     }
