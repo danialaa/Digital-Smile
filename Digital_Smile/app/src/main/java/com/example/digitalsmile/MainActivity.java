@@ -3,13 +3,7 @@ package com.example.digitalsmile;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
-import android.graphics.Camera;
-import android.graphics.Color;
-import android.graphics.ColorSpace;
-import android.graphics.ImageDecoder;
 import android.graphics.drawable.BitmapDrawable;
-import android.media.Image;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Menu;
@@ -29,7 +23,6 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.lang.reflect.Method;
 
 public class MainActivity extends Activity implements CameraBridgeViewBase.CvCameraViewListener2 {
     private static final String TAG = "OCVSample::Activity";
@@ -37,8 +30,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     public  static final int JAVA_DETECTOR = 0;
 
     private int learn_frames = 0;
-    private Mat teplateR;
-    private Mat teplateL;
     int method = 0;
 
     // matrix for zooming
@@ -51,11 +42,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private MenuItem mItemFace20;
 
     private Mat mRgba;
-
     private Mat mRgbaT;
-
     private Mat mRgbaF;
     private Mat mGray;
+
     private File mCascadeFile;
     private File mCascadeFileMouth;
     private CascadeClassifier mJavaDetector;
@@ -71,10 +61,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     private SeekBar mMethodSeekbar;
     private TextView mValue;
 
-    double xCenter = -1;
-    double yCenter = -1;
-    double smileWidth = -1;
-    double smileHeight = -1;
     private BaseLoaderCallback mLoaderCallback = new BaseLoaderCallback(this) {
         @Override
         public void onManagerConnected(int status) {
@@ -162,13 +148,15 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         setContentView(R.layout.activity_main);
 
         teeth = findViewById(R.id.teeth);
-
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
         mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
         mMethodSeekbar = (SeekBar) findViewById(R.id.methodSeekBar);
+        mMethodSeekbar.setMax(30);
+        method = mMethodSeekbar.getMax();
+
         mValue = (TextView) findViewById(R.id.method);
 
         mMethodSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
@@ -187,26 +175,6 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser)
             {
                 method = progress;
-                switch (method) {
-                    case 0:
-                        mValue.setText("0");
-                        break;
-                    case 1:
-                        mValue.setText("25");
-                        break;
-                    case 2:
-                        mValue.setText("50");
-                        break;
-                    case 3:
-                        mValue.setText("75");
-                        break;
-                    case 4:
-                        mValue.setText("75");
-                        break;
-                    case 5:
-                        mValue.setText("100");
-                        break;
-                }
             }
         });
     }
@@ -237,12 +205,18 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mOpenCvCameraView.disableView();
     }
 
+    int computeDistance(int width , int MaxValue , int CurrentValue)
+    {
+       int PWidth =0 ;
+       PWidth = (CurrentValue * width ) / MaxValue;
+       return PWidth;
+    }
+
     public void onCameraViewStarted(int width, int height) {
         mGray = new Mat();
         mRgba = new Mat(height,width,CvType.CV_8UC4);
         mRgbaF = new Mat(height,width,CvType.CV_8UC4);
         mRgbaT = new Mat(width,height,CvType.CV_8UC4);
-
     }
 
     public void onCameraViewStopped() {
@@ -252,9 +226,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mZoomWindow2.release();
     }
 
-
-    public Mat AugmentTeeth(int width , int height , int startx , int starty, Mat mRgba)
-    {
+    public Mat augmentTeeth(int width , int height , int startx , int starty, Mat mRgba , int CustomWidth) {
+        if(CustomWidth < 0)
+        {
+            CustomWidth = width;
+        }
         Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
         Mat srcmat = new Mat(src.getWidth(), src.getHeight(), CvType.CV_8UC4);
         Utils.bitmapToMat(src, srcmat);
@@ -267,7 +243,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         Bitmap ss = Bitmap.createBitmap(mRgba.width(),mRgba.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mRgba,ss);
 
-        for(int r = 0, r2 = startx; r < src.getWidth() && r2 < ss.getWidth(); r++, r2++ )
+        for(int r = 0, r2 = startx; r < src.getWidth() && r2 < CustomWidth; r++, r2++ )
         {
             for( int c = 0, c2 = starty; c < src.getHeight() && c2 < ss.getHeight(); c2++, c++)
             {
@@ -288,10 +264,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mRgba = inputFrame.rgba();
 
         Core.transpose(mRgba,mRgbaT);
-        mRgba = AugmentTeeth(350,350,100,100,mRgba);
         Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
         Core.flip(mRgbaF,mRgba,0);
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
+        int Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
+       mRgba = augmentTeeth(350,350,100,100,mRgba,Cwidth);
 
         int height;
 
@@ -325,15 +302,16 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         for (int i = 0; i < mouthsArray.length; i++)
         {
             Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
-
-            mRgba = AugmentTeeth(mouthsArray[i].width,mouthsArray[i].height,mouthsArray[i].x,mouthsArray[i].y,mRgba);
+            Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
+            mRgba = augmentTeeth(mouthsArray[i].width,mouthsArray[i].height,mouthsArray[i].x,mouthsArray[i].y,mRgba,Cwidth );
         }
 
         return mRgba;
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
+    public boolean onCreateOptionsMenu(Menu menu)
+    {
         Log.i(TAG, "called onCreateOptionsMenu");
         mItemFace50 = menu.add("Face size 50%");
         mItemFace40 = menu.add("Face size 40%");
