@@ -263,12 +263,13 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     public Mat onCameraFrame(CameraBridgeViewBase.CvCameraViewFrame inputFrame) {
         mRgba = inputFrame.rgba();
 
-        Core.transpose(mRgba,mRgbaT);
-        Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
-        Core.flip(mRgbaF,mRgba,0);
+//        Core.transpose(mRgba,mRgbaT);
+//        Imgproc.resize(mRgbaT,mRgbaF,mRgbaF.size(),0,0,0);
+//        Core.flip(mRgbaF,mRgba,0);
+
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
         int Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
-       mRgba = augmentTeeth(350,350,100,100,mRgba,Cwidth);
+ //       mRgba = augmentTeeth(350,350,100,100,mRgba,Cwidth);
 
         int height;
 
