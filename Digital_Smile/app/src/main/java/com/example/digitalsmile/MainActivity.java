@@ -205,11 +205,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mOpenCvCameraView.disableView();
     }
 
-    int computeDistance(int width , int MaxValue , int CurrentValue)
+    int computeDistance(int width, int maxValue, int currentValue)
     {
-       int PWidth =0 ;
-       PWidth = (CurrentValue * width ) / MaxValue;
-       return PWidth;
+       int percentageWidth =0 ;
+       percentageWidth = (currentValue * width ) / maxValue;
+       return percentageWidth;
     }
 
     public void onCameraViewStarted(int width, int height) {
@@ -226,11 +226,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mZoomWindow2.release();
     }
 
-    public Mat augmentTeeth(int width , int height , int startx , int starty, Mat mRgba , int CustomWidth) {
-        if(CustomWidth < 0)
-        {
-            CustomWidth = width;
+    public Mat augmentTeeth(int width , int height , int startx , int starty, Mat mRgba , int customWidth) {
+        if(customWidth < 0) {
+            customWidth = width;
         }
+
         Bitmap src = ((BitmapDrawable)teeth.getDrawable()).getBitmap();
         Mat srcmat = new Mat(src.getWidth(), src.getHeight(), CvType.CV_8UC4);
         Utils.bitmapToMat(src, srcmat);
@@ -243,7 +243,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         Bitmap ss = Bitmap.createBitmap(mRgba.width(),mRgba.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mRgba,ss);
 
-        for(int r = 0, r2 = startx; r < src.getWidth() && r2 < CustomWidth; r++, r2++ )
+        for(int r = 0, r2 = startx; r < src.getWidth() && r2 < customWidth; r++, r2++ )
         {
             for( int c = 0, c2 = starty; c < src.getHeight() && c2 < ss.getHeight(); c2++, c++)
             {
@@ -268,7 +268,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 //        Core.flip(mRgbaF,mRgba,0);
 
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
-        int Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
+        int Cwidth;
  //       mRgba = augmentTeeth(350,350,100,100,mRgba,Cwidth);
 
         int height;
@@ -302,9 +302,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         for (int i = 0; i < mouthsArray.length; i++)
         {
-            Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
+            //Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
             Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
             mRgba = augmentTeeth(mouthsArray[i].width,mouthsArray[i].height,mouthsArray[i].x,mouthsArray[i].y,mRgba,Cwidth );
+            break;
         }
 
         return mRgba;
