@@ -205,8 +205,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         mOpenCvCameraView.disableView();
     }
 
-    int computeDistance(int width, int maxValue, int currentValue)
-    {
+    int computeDistance(int width, int maxValue, int currentValue) {
        int percentageWidth =0 ;
        percentageWidth = (currentValue * width ) / maxValue;
        return percentageWidth;
@@ -240,6 +239,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         Bitmap teethbit = Bitmap.createScaledBitmap(src,width,height,true);
         src = teethbit;
 
+        Tooth tooth = new Tooth(50, 50, src.getWidth(), src.getHeight(), src);
+        tooth.setTooth_OverlayImage(src);
+        tooth.rotate_Tooth(90);
+        src = tooth.getTooth_OverlayImage();
+
         Bitmap ss = Bitmap.createBitmap(mRgba.width(),mRgba.height(), Bitmap.Config.ARGB_8888);
         Utils.matToBitmap(mRgba,ss);
 
@@ -269,7 +273,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
         int Cwidth;
- //       mRgba = augmentTeeth(350,350,100,100,mRgba,Cwidth);
+        mRgba = augmentTeeth(350,350,100,100,mRgba,0);
 
         int height;
 
@@ -312,8 +316,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu)
-    {
+    public boolean onCreateOptionsMenu(Menu menu) {
         Log.i(TAG, "called onCreateOptionsMenu");
         mItemFace50 = menu.add("Face size 50%");
         mItemFace40 = menu.add("Face size 40%");
