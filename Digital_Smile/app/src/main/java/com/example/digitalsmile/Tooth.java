@@ -1,7 +1,14 @@
 package com.example.digitalsmile;
 
 import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Color;
+import android.graphics.ColorFilter;
+import android.graphics.LightingColorFilter;
 import android.graphics.Matrix;
+import android.graphics.Paint;
+import android.graphics.PorterDuff;
+import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.BitmapDrawable;
 
 import org.opencv.android.Utils;
@@ -172,18 +179,6 @@ public class Tooth {
     }
 
     public void rotate_Tooth(float angle) {
-//        double centerX = tooth_Position.x + (tooth_Size.width / 2);
-//        double centerY = tooth_Position.y + (tooth_Size.height / 2);
-//
-//        Point center = new Point(centerX, centerY);
-//
-//        Mat toothMat = new Mat(tooth_OverlayImage.getWidth(), tooth_OverlayImage.getHeight(), CvType.CV_8UC4);
-//
-//        Mat mapMatrix = Imgproc.getRotationMatrix2D(center, angle, scale);
-//        Imgproc.warpAffine(toothMat, toothMat, mapMatrix, tooth_Size);
-//
-//        Utils.matToBitmap(toothMat, tooth_OverlayImage);
-
         Matrix toothMat = new Matrix();
         toothMat.postRotate(angle);
         tooth_OverlayImage = Bitmap.createBitmap(tooth_OverlayImage, 0, 0, tooth_OverlayImage.getWidth(),
@@ -191,12 +186,12 @@ public class Tooth {
     }
 
     public void color_Tooth(int red, int green, int blue, double alpha) {
-        Mat toothMat = new Mat(tooth_OverlayImage.getWidth(), tooth_OverlayImage.getHeight(), CvType.CV_8UC4);
-
-        Scalar targetColor = new Scalar(red, green, blue);
-        Mat colorMask = new Mat(toothMat.rows(), toothMat.cols(), CvType.CV_8UC3, targetColor);
-        Imgproc.accumulateWeighted(toothMat, toothMat, alpha, colorMask);
-
-        Utils.matToBitmap(toothMat, tooth_OverlayImage);
+        int color = Color.argb(200, red, green, blue);
+        Paint paint = new Paint();
+        paint.setColorFilter(new PorterDuffColorFilter(color, PorterDuff.Mode.SRC_IN));
+        Bitmap bitmapResult = Bitmap.createBitmap(tooth_OverlayImage.getWidth(), tooth_OverlayImage.getHeight(), Bitmap.Config.ARGB_8888);
+        Canvas canvas = new Canvas(bitmapResult);
+        canvas.drawBitmap(tooth_OverlayImage, 0, 0, paint);
+        tooth_OverlayImage = bitmapResult;
     }
 }

@@ -239,9 +239,10 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         Bitmap teethbit = Bitmap.createScaledBitmap(src,width,height,true);
         src = teethbit;
 
-        Tooth tooth = new Tooth(50, 50, src.getWidth(), src.getHeight(), src);
+        Tooth tooth = new Tooth(0, 0, src.getWidth(), src.getHeight(), src);
         tooth.setTooth_OverlayImage(src);
         tooth.rotate_Tooth(90);
+        tooth.color_Tooth(255, 0, 0, 0.5);
         src = tooth.getTooth_OverlayImage();
 
         Bitmap ss = Bitmap.createBitmap(mRgba.width(),mRgba.height(), Bitmap.Config.ARGB_8888);
@@ -273,7 +274,7 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
         int Cwidth;
-        mRgba = augmentTeeth(350,350,100,100,mRgba,0);
+        mRgba = augmentTeeth(350,350,100,100,mRgba,30);
 
         int height;
 
