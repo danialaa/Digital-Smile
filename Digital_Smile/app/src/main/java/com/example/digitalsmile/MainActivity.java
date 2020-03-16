@@ -3,6 +3,7 @@ package com.example.digitalsmile;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
 import android.os.Bundle;
 import android.util.Log;
@@ -133,7 +134,11 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         }
     };
 
+    Tooth upper ;
+    Tooth lower ;
     private ImageView teeth;
+    private Bitmap upperTeeth;
+    private Bitmap lowerTeeth;
 
     public MainActivity() {
         mDetectorName = new String[2];
@@ -150,17 +155,19 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         teeth = findViewById(R.id.teeth);
         getWindow().addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON);
 
-        mOpenCvCameraView = (CameraBridgeViewBase) findViewById(R.id.fd_activity_surface_view);
+        upperTeeth =  BitmapFactory.decodeResource(getResources(),R.drawable.top);
+        lowerTeeth =  BitmapFactory.decodeResource(getResources(),R.drawable.bottom);
+
+        mOpenCvCameraView = findViewById(R.id.fd_activity_surface_view);
         mOpenCvCameraView.setCvCameraViewListener(this);
 
-        mMethodSeekbar = (SeekBar) findViewById(R.id.methodSeekBar);
+        mMethodSeekbar = findViewById(R.id.methodSeekBar);
         mMethodSeekbar.setMax(30);
         method = mMethodSeekbar.getMax();
 
-        mValue = (TextView) findViewById(R.id.method);
+        mValue = findViewById(R.id.method);
 
         mMethodSeekbar.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
-
             @Override
             public void onStopTrackingTouch(SeekBar seekBar)
             {
@@ -273,8 +280,15 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 //        Core.flip(mRgbaF,mRgba,0);
 
         Imgproc.cvtColor(mRgba,mGray,Imgproc.COLOR_RGB2GRAY);
-        int Cwidth;
-        mRgba = augmentTeeth(350,350,100,100,mRgba,30);
+        int Cwidth = computeDistance(mRgba.width(), mMethodSeekbar.getMax(), method);
+        upper = new Tooth(0, "UpperTeeth", 50
+                , 50, 100, 50, upperTeeth);
+        // //   Lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width/4
+        //                  , mouthsArray[i].y + mouthsArray[i].height * 2 /6, mouthsArray[i].width /2, mouthsArray[i].height / 6, Lowerteeth);
+//
+        mRgba = upper.augment_Tooth(mRgba, Cwidth);
+
+        //        mRgba = Lower.augment_Tooth(mRgba, Cwidth);
 
         int height;
 
@@ -303,14 +317,26 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
             Log.e(TAG, "Detection method is not selected!");
         }
 
+        Rect[] facesArray = faces.toArray();
         Rect[] mouthsArray = mouths.toArray();
 
-        for (int i = 0; i < mouthsArray.length; i++)
-        {
-            //Imgproc.rectangle(mRgba, mouthsArray[i].tl(), mouthsArray[i].br(), MOUTH_RECT_COLOR, 3);
-            Cwidth = computeDistance(mRgba.width(),mMethodSeekbar.getMax(),method);
-            mRgba = augmentTeeth(mouthsArray[i].width,mouthsArray[i].height,mouthsArray[i].x,mouthsArray[i].y,mRgba,Cwidth );
-            break;
+        for (int i = 0; i < mouthsArray.length; i++) {
+            for(int k = 0 ; k < facesArray.length; k++) {
+                if(facesArray[k].contains(mouthsArray[i].tl()) && facesArray[k].contains(mouthsArray[i].br()) &&
+                        mouthsArray[i].tl().y > (facesArray[k].y + facesArray[k].height) / 2) {
+                    Cwidth = computeDistance(mRgba.width(), mMethodSeekbar.getMax(), method);
+
+                    upper = new Tooth(0, "UpperTeeth", mouthsArray[i].x + mouthsArray[i].width / 4 - 5,
+                            mouthsArray[i].y + 13 + mouthsArray[i].height * 1 / 6,
+                            mouthsArray[i].width / 2 + 30, mouthsArray[i].height / 6 + 15, upperTeeth);
+                // //   Lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width/4
+          //                  , mouthsArray[i].y + mouthsArray[i].height * 2 /6, mouthsArray[i].width /2, mouthsArray[i].height / 6, Lowerteeth);
+    //
+                    mRgba = upper.augment_Tooth(mRgba, Cwidth);
+
+            //        mRgba = Lower.augment_Tooth(mRgba, Cwidth);
+                }
+            }
         }
 
         return mRgba;

@@ -87,6 +87,7 @@ public class Tooth {
 
     public void setTooth_DefaultAugmentedImage(Bitmap tooth_DefaultAugmentedImage) {
         this.tooth_DefaultAugmentedImage = tooth_DefaultAugmentedImage;
+        adjust_OverlayImage();
     }
 
     public boolean isImageAssigned() {
@@ -102,8 +103,14 @@ public class Tooth {
     }
 
     private void adjust_OverlayImage() {
-        tooth_OverlayImage = tooth_DefaultAugmentedImage.copy(Bitmap.Config.ARGB_8888, true);
-        resize_Tooth((int)tooth_Size.width, (int)tooth_Size.height);
+        if(tooth_DefaultAugmentedImage != null) {
+            tooth_OverlayImage = tooth_DefaultAugmentedImage.copy(Bitmap.Config.ARGB_8888, true);
+            resize_Tooth((int)tooth_Size.width, (int)tooth_Size.height);
+
+            if (!isImageAssigned) {
+                isImageAssigned = true;
+            }
+        }
     }
 
     public void reset_Teeth() {
@@ -126,6 +133,40 @@ public class Tooth {
     public void change_ImageWidth(int width, int height) {
         Bitmap teethBit = Bitmap.createScaledBitmap(tooth_OverlayImage, width, height, true);
         tooth_OverlayImage = teethBit;
+    }
+
+    public Mat augment_Tooth(Mat destination, int cWidth) {
+        if (isImageAssigned) {
+            Mat srcmat = new Mat(tooth_OverlayImage.getWidth(), tooth_OverlayImage.getHeight(), CvType.CV_8UC4);
+            Utils.bitmapToMat(tooth_OverlayImage, srcmat);
+
+            destination.convertTo(destination, CvType.CV_8UC4);
+
+            Bitmap Destination_Bitmap = Bitmap.createBitmap(destination.width(), destination.height(), Bitmap.Config.ARGB_8888);
+            Utils.matToBitmap(destination, Destination_Bitmap);
+
+            for (int r = 0, r2 = (int)tooth_Position.x; r < tooth_OverlayImage.getWidth() && r2 < cWidth; r++, r2++) {
+                for (int c = 0, c2 = (int)tooth_Position.y; c < tooth_OverlayImage.getHeight() && c2 < Destination_Bitmap.getHeight(); c2++, c++) {
+                    int pixVal = tooth_OverlayImage.getPixel(r, c);
+                    int pix2Val = Destination_Bitmap.getPixel(r2,c2);
+                    int red = Color.red(pix2Val);
+                    int green= Color.green((pix2Val));
+                    int blue = Color.blue((pix2Val));
+                    int white = Color.WHITE;
+                    int yellow = Color.YELLOW;
+
+                    if (pixVal != 0 && red > 120 && blue > 120 && green > 120){
+                        Destination_Bitmap.setPixel(r2, c2, tooth_OverlayImage.getPixel(r, c));
+                    }
+                }
+            }
+
+            Utils.bitmapToMat(Destination_Bitmap, destination);
+        }
+
+  //      Imgproc.cvtColor(destination,destination,Imgproc.COLOR_BGR2GRAY);
+//        Imgproc.cvtColor(destination,destination,Imgproc.COLOR_GRAY2RGBA,4);
+        return destination;
     }
 
     public Mat augment_Tooth(Mat destination) {
