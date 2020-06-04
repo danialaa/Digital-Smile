@@ -283,12 +283,12 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
         int Cwidth = computeDistance(mRgba.width(), mMethodSeekbar.getMax(), method);
         upper = new Tooth(0, "UpperTeeth", 50
                 , 50, 100, 50, upperTeeth);
-        // //   Lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width/4
-        //                  , mouthsArray[i].y + mouthsArray[i].height * 2 /6, mouthsArray[i].width /2, mouthsArray[i].height / 6, Lowerteeth);
+        //   lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width / 4
+        //                  , mouthsArray[i].y + mouthsArray[i].height * 2 / 6, mouthsArray[i].width / 2, mouthsArray[i].height / 6, lowerTeeth);
 //
         mRgba = upper.augment_Tooth(mRgba, Cwidth);
 
-        //        mRgba = Lower.augment_Tooth(mRgba, Cwidth);
+        //        mRgba = lower.augment_Tooth(mRgba, Cwidth);
 
         int height;
 
@@ -328,13 +328,13 @@ public class MainActivity extends Activity implements CameraBridgeViewBase.CvCam
 
                     upper = new Tooth(0, "UpperTeeth", mouthsArray[i].x + mouthsArray[i].width / 4 - 5,
                             mouthsArray[i].y + 13 + mouthsArray[i].height * 1 / 6,
-                            mouthsArray[i].width / 2 + 30, mouthsArray[i].height / 6 + 15, upperTeeth);
-                // //   Lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width/4
-          //                  , mouthsArray[i].y + mouthsArray[i].height * 2 /6, mouthsArray[i].width /2, mouthsArray[i].height / 6, Lowerteeth);
+                            mouthsArray[i].width / 2 + 30, mouthsArray[i].height / 6 + 10, upperTeeth);
+                //    lower = new Tooth(0, "LowerTeeth", mouthsArray[i].x + mouthsArray[i].width / 4
+          //                  , mouthsArray[i].y + mouthsArray[i].height * 2 / 6, mouthsArray[i].width / 2, mouthsArray[i].height / 6, lowerTeeth);
     //
                     mRgba = upper.augment_Tooth(mRgba, Cwidth);
 
-            //        mRgba = Lower.augment_Tooth(mRgba, Cwidth);
+            //        mRgba = lower.augment_Tooth(mRgba, Cwidth);
                 }
             }
         }

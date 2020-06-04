@@ -20,6 +20,8 @@ import org.opencv.core.Scalar;
 import org.opencv.core.Size;
 import org.opencv.imgproc.Imgproc;
 
+import java.util.logging.Filter;
+
 import static org.opencv.core.CvType.CV_8UC3;
 
 public class Tooth {
@@ -144,13 +146,21 @@ public class Tooth {
 
             Bitmap Destination_Bitmap = Bitmap.createBitmap(destination.width(), destination.height(), Bitmap.Config.ARGB_8888);
             Utils.matToBitmap(destination, Destination_Bitmap);
+            Mat filtered = new Mat(destination.width(), destination.height(), CvType.CV_8UC4);
+
+            Mat mask = new Mat(destination.width(), destination.height(), CvType.CV_8UC4);
+            Imgproc.cvtColor(destination, filtered, Imgproc.COLOR_BGR2GRAY);
+
+            Imgproc.cvtColor(destination, mask, Imgproc.COLOR_BGR2GRAY);
+            Imgproc.blur(filtered, filtered, new Size(5, 5));
+            Imgproc.adaptiveThreshold(filtered, mask, 255, Imgproc.ADAPTIVE_THRESH_MEAN_C, Imgproc.THRESH_BINARY, 11, 2);
 
             for (int r = 0, r2 = (int)tooth_Position.x; r < tooth_OverlayImage.getWidth() && r2 < cWidth; r++, r2++) {
                 for (int c = 0, c2 = (int)tooth_Position.y; c < tooth_OverlayImage.getHeight() && c2 < Destination_Bitmap.getHeight(); c2++, c++) {
                     int pixVal = tooth_OverlayImage.getPixel(r, c);
-                    int pix2Val = Destination_Bitmap.getPixel(r2,c2);
+                    int pix2Val = Destination_Bitmap.getPixel(r2, c2);
                     int red = Color.red(pix2Val);
-                    int green= Color.green((pix2Val));
+                    int green = Color.green((pix2Val));
                     int blue = Color.blue((pix2Val));
                     int white = Color.WHITE;
                     int yellow = Color.YELLOW;
@@ -161,11 +171,10 @@ public class Tooth {
                 }
             }
 
-            Utils.bitmapToMat(Destination_Bitmap, destination);
+            //Utils.bitmapToMat(Destination_Bitmap, destination);
+            destination = mask;
         }
 
-  //      Imgproc.cvtColor(destination,destination,Imgproc.COLOR_BGR2GRAY);
-//        Imgproc.cvtColor(destination,destination,Imgproc.COLOR_GRAY2RGBA,4);
         return destination;
     }
 
